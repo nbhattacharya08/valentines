@@ -2,90 +2,123 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Be My Valentine?</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
             background-color: #ffebee;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden; /* Prevents scrollbars from appearing */
         }
-        h1 { color: #d32f2f; font-size: 3rem; text-align: center; margin-bottom: 30px; }
-        .container { text-align: center; position: relative; width: 100%; height: 200px; }
-        button { padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; transition: transform 0.2s; margin: 10px; }
-        #yesBtn { background-color: #4caf50; color: white; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); }
-        #noBtn { background-color: #f44336; color: white; position: absolute; transition: all 0.15s ease; white-space: nowrap; z-index: 999; }
+
+        h1 { color: #d32f2f; text-align: center; padding: 20px; }
+
+        .btn-group {
+            display: flex;
+            gap: 20px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+        }
+
+        #yesBtn { background-color: #4caf50; color: white; }
+
+        #noBtn {
+            background-color: #f44336;
+            color: white;
+            position: fixed; /* Fixed to the viewport */
+            transition: all 0.1s ease;
+            z-index: 999;
+            /* Initial position */
+            top: 55%; 
+            left: 55%;
+        }
+
         .hidden { display: none; }
-        #celebration { font-size: 2.5rem; color: #e91e63; animation: bounce 0.5s infinite alternate; }
-        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-20px); } }
     </style>
 </head>
 <body>
 
-    <div id="main-content">
-        <h1 id="question">Will you be my valentine? 💖</h1>
-        <div class="container">
-            <button id="yesBtn" onclick="showSuccess()">Yes</button>
-            <button id="noBtn" onmouseover="moveButton()" onclick="moveButton()">No</button>
+    <div id="ui">
+        <h1>Will you be my valentine? 💖</h1>
+        <div class="btn-group">
+            <button id="yesBtn" onclick="celebrate()">Yes</button>
+            <button id="noBtn" onmouseover="moveNo()" onclick="moveNo()">No</button>
         </div>
     </div>
 
-    <div id="success-message" class="hidden">
-        <h1 id="celebration">Yayyyy Thank you!!!! 🥰🌹</h1>
+    <div id="thanks" class="hidden">
+        <h1>Yayyyy Thank you!!!! 🥰🌹</h1>
     </div>
 
     <script>
-        function moveButton() {
-    const btn = document.getElementById('noBtn');
-    
-    // Calculate the max available space (window size minus button size)
-    // We subtract an extra 20px padding to keep it away from the very edge
-    const maxX = window.innerWidth - btn.offsetWidth - 20;
-    const maxY = window.innerHeight - btn.offsetHeight - 20;
+        function moveNo() {
+            const btn = document.getElementById('noBtn');
+            
+            // Get viewport dimensions
+            const vWidth = window.innerWidth;
+            const vHeight = window.innerHeight;
 
-    // Ensure the values don't go below 0
-    const x = Math.max(0, Math.floor(Math.random() * maxX));
-    const y = Math.max(0, Math.floor(Math.random() * maxY));
+            // Button dimensions
+            const bWidth = btn.offsetWidth;
+            const bHeight = btn.offsetHeight;
 
-    // Apply the new coordinates
-    btn.style.left = x + 'px';
-    btn.style.top = y + 'px';
-}
+            // Calculate safe boundaries
+            // We use a 20px buffer to ensure it doesn't touch the very edge
+            const maxX = vWidth - bWidth - 20;
+            const maxY = vHeight - bHeight - 20;
 
-function showSuccess() {
-    document.getElementById('main-content').classList.add('hidden');
-    document.getElementById('success-message').classList.remove('hidden');
-    
-    // Confetti Burst Logic
-    var duration = 5 * 1000;
-    var animationEnd = Date.now() + duration;
-    var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+            // Generate coordinates within safe range
+            const randomX = Math.floor(Math.random() * maxX);
+            const randomY = Math.floor(Math.random() * maxY);
 
-    function randomInRange(min, max) {
-      return Math.random() * (max - min) + min;
-    }
+            // Apply new position
+            btn.style.left = randomX + 'px';
+            btn.style.top = randomY + 'px';
+        }
 
-    var interval = setInterval(function() {
-      var timeLeft = animationEnd - Date.now();
-      if (timeLeft <= 0) return clearInterval(interval);
-      var particleCount = 50 * (timeLeft / duration);
-      confetti(Object.assign({}, defaults, { 
-          particleCount, 
-          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } 
-      }));
-      confetti(Object.assign({}, defaults, { 
-          particleCount, 
-          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } 
-      }));
-    }, 250);
-}
+        function celebrate() {
+            document.getElementById('ui').classList.add('hidden');
+            document.getElementById('thanks').classList.remove('hidden');
+            
+            const duration = 5 * 1000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 3,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#ff0000', '#ff69b4']
+                });
+                confetti({
+                    particleCount: 3,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#ff0000', '#ff69b4']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
     </script>
 </body>
 </html>
