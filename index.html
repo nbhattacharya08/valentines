@@ -6,54 +6,97 @@
     <title>Be My Valentine?</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background-color: #ffebee;
-            font-family: 'Arial', sans-serif;
-            overflow: hidden; /* Prevents scrollbars from appearing */
+            box-sizing: border-box;
         }
 
-        h1 { color: #d32f2f; text-align: center; padding: 20px; }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Strictly prevents scrolling */
+            background-color: #ffebee;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #main-ui {
+            text-align: center;
+            z-index: 1;
+        }
+
+        h1 {
+            color: #d32f2f;
+            font-size: clamp(1.5rem, 8vw, 3rem);
+            margin-bottom: 40px;
+            padding: 0 20px;
+        }
 
         .btn-group {
             display: flex;
-            gap: 20px;
+            justify-content: center;
+            gap: 30px;
+            min-height: 60px;
         }
 
         button {
-            padding: 15px 30px;
+            padding: 15px 35px;
             font-size: 1.2rem;
             border: none;
             border-radius: 50px;
             cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        #yesBtn { background-color: #4caf50; color: white; }
+        #yesBtn {
+            background-color: #4caf50;
+            color: white;
+            transition: transform 0.2s;
+        }
+
+        #yesBtn:hover {
+            transform: scale(1.1);
+        }
 
         #noBtn {
             background-color: #f44336;
             color: white;
-            position: fixed; /* Fixed to the viewport */
-            transition: all 0.1s ease;
-            z-index: 999;
-            /* Initial position */
-            top: 55%; 
-            left: 55%;
+            position: fixed; /* Fixed to viewport to avoid container issues */
+            transition: all 0.15s ease;
+            z-index: 1000;
+            /* Starting position slightly right of center */
+            left: calc(50% + 60px);
+            top: 50%;
+            transform: translateY(10px);
         }
 
-        .hidden { display: none; }
+        .hidden {
+            display: none;
+        }
+
+        #success {
+            text-align: center;
+            animation: fadeIn 1s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .celebration-text {
+            font-size: clamp(2rem, 10vw, 4rem);
+            color: #e91e63;
+        }
     </style>
 </head>
 <body>
 
-    <div id="ui">
+    <div id="main-ui">
         <h1>Will you be my valentine? 💖</h1>
         <div class="btn-group">
             <button id="yesBtn" onclick="celebrate()">Yes</button>
@@ -61,60 +104,74 @@
         </div>
     </div>
 
-    <div id="thanks" class="hidden">
-        <h1>Yayyyy Thank you!!!! 🥰🌹</h1>
+    <div id="success" class="hidden">
+        <h1 class="celebration-text">Yayyyy Thank you!!!! 🥰🌹</h1>
     </div>
 
     <script>
         function moveNo() {
-            const btn = document.getElementById('noBtn');
+            const noBtn = document.getElementById('noBtn');
+            const yesBtn = document.getElementById('yesBtn');
             
-            // Get viewport dimensions
-            const vWidth = window.innerWidth;
-            const vHeight = window.innerHeight;
+            // Get screen boundaries
+            const padding = 20;
+            const screenW = window.innerWidth;
+            const screenH = window.innerHeight;
+            
+            // Get button sizes
+            const bWidth = noBtn.offsetWidth;
+            const bHeight = noBtn.offsetHeight;
+            
+            // Get Yes button location to avoid it
+            const yesRect = yesBtn.getBoundingClientRect();
 
-            // Button dimensions
-            const bWidth = btn.offsetWidth;
-            const bHeight = btn.offsetHeight;
+            let newX, newY;
+            let overlap = true;
 
-            // Calculate safe boundaries
-            // We use a 20px buffer to ensure it doesn't touch the very edge
-            const maxX = vWidth - bWidth - 20;
-            const maxY = vHeight - bHeight - 20;
+            // Loop until we find a spot that isn't on the Yes button
+            while (overlap) {
+                newX = Math.floor(Math.random() * (screenW - bWidth - padding)) + (padding / 2);
+                newY = Math.floor(Math.random() * (screenH - bHeight - padding)) + (padding / 2);
 
-            // Generate coordinates within safe range
-            const randomX = Math.floor(Math.random() * maxX);
-            const randomY = Math.floor(Math.random() * maxY);
+                // Check overlap with Yes button (including 50px buffer)
+                const buffer = 50;
+                const hitX = newX + bWidth > yesRect.left - buffer && newX < yesRect.right + buffer;
+                const hitY = newY + bHeight > yesRect.top - buffer && newY < yesRect.bottom + buffer;
 
-            // Apply new position
-            btn.style.left = randomX + 'px';
-            btn.style.top = randomY + 'px';
+                if (!hitX || !hitY) overlap = false;
+            }
+
+            noBtn.style.left = newX + 'px';
+            noBtn.style.top = newY + 'px';
         }
 
         function celebrate() {
-            document.getElementById('ui').classList.add('hidden');
-            document.getElementById('thanks').classList.remove('hidden');
-            
+            // Hide UI
+            document.getElementById('main-ui').classList.add('hidden');
+            document.getElementById('noBtn').classList.add('hidden');
+            document.getElementById('success').classList.remove('hidden');
+
+            // Fire Confetti
             const duration = 5 * 1000;
-            const end = Date.now() + duration;
+            const animationEnd = Date.now() + duration;
 
             (function frame() {
                 confetti({
-                    particleCount: 3,
+                    particleCount: 5,
                     angle: 60,
                     spread: 55,
                     origin: { x: 0 },
-                    colors: ['#ff0000', '#ff69b4']
+                    colors: ['#ff0000', '#ff69b4', '#ffffff']
                 });
                 confetti({
-                    particleCount: 3,
+                    particleCount: 5,
                     angle: 120,
                     spread: 55,
                     origin: { x: 1 },
-                    colors: ['#ff0000', '#ff69b4']
+                    colors: ['#ff0000', '#ff69b4', '#ffffff']
                 });
 
-                if (Date.now() < end) {
+                if (Date.now() < animationEnd) {
                     requestAnimationFrame(frame);
                 }
             }());
